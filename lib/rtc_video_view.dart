@@ -11,24 +11,25 @@ enum RTCVideoViewObjectFit {
 }
 
 class RTCVideoRenderer {
-  MethodChannel _channel = WebRTC.methodChannel();
+  MethodChannel _channel=WebRTC.methodChannel();
   int _textureId;
-  int _rotation = 0;
-  double _width = 0.0, _height = 0.0;
-  bool _mirror = false;
-  double _aspectRatio = 1.0;
+  int _rotation=0;
+  double _width=0.0,
+      _height=0.0;
+  bool _mirror=false;
+  double _aspectRatio=1.0;
   MediaStream _srcObject;
-  RTCVideoViewObjectFit _objectFit =
+  RTCVideoViewObjectFit _objectFit=
       RTCVideoViewObjectFit.RTCVideoViewObjectFitContain;
   StreamSubscription<dynamic> _eventSubscription;
 
   dynamic onStateChanged;
 
   initialize() async {
-    final Map<dynamic, dynamic> response =
-        await _channel.invokeMethod('createVideoRenderer', {});
-    _textureId = response['textureId'];
-    _eventSubscription = _eventChannelFor(_textureId)
+    final Map<dynamic, dynamic> response=
+    await _channel.invokeMethod('createVideoRenderer', {});
+    _textureId=response['textureId'];
+    _eventSubscription=_eventChannelFor(_textureId)
         .receiveBroadcastStream()
         .listen(eventListener, onError: errorListener);
   }
@@ -41,16 +42,17 @@ class RTCVideoRenderer {
 
   int get textureId => _textureId;
 
-  double get aspectRatio => (_width == 0 || _height == 0)
-      ? 1.0
-      : (_rotation == 90 || _rotation == 270)
+  double get aspectRatio =>
+      (_width == 0 || _height == 0)
+          ? 1.0
+          : (_rotation == 90 || _rotation == 270)
           ? _height / _width
           : _width / _height;
 
   bool get mirror => _mirror;
 
   set mirror(bool mirror) {
-    _mirror = mirror;
+    _mirror=mirror;
     if (this.onStateChanged != null) {
       this.onStateChanged();
     }
@@ -59,14 +61,23 @@ class RTCVideoRenderer {
   RTCVideoViewObjectFit get objectFit => _objectFit;
 
   set objectFit(RTCVideoViewObjectFit objectFit) {
-    _objectFit = objectFit;
+    _objectFit=objectFit;
     if (this.onStateChanged != null) {
       this.onStateChanged();
     }
   }
 
+  void setSrcObjectForId(MediaStream stream, String peerConnectionId) {
+    _srcObject=stream;
+    _channel.invokeMethod('videoRendererSetSrcObject', <String, dynamic>{
+      'textureId': _textureId,
+      'streamId': stream != null ? stream.id : '',
+      'peerConnectionId': peerConnectionId
+    });
+  }
+
   set srcObject(MediaStream stream) {
-    _srcObject = stream;
+    _srcObject=stream;
     _channel.invokeMethod('videoRendererSetSrcObject', <String, dynamic>{
       'textureId': _textureId,
       'streamId': stream != null ? stream.id : ''
@@ -86,14 +97,14 @@ class RTCVideoRenderer {
   }
 
   void eventListener(dynamic event) {
-    final Map<dynamic, dynamic> map = event;
+    final Map<dynamic, dynamic> map=event;
     switch (map['event']) {
       case 'didTextureChangeRotation':
-        _rotation = map['rotation'];
+        _rotation=map['rotation'];
         break;
       case 'didTextureChangeVideoSize':
-        _width = 0.0 + map['width'];
-        _height = 0.0 + map['height'];
+        _width=0.0 + map['width'];
+        _height=0.0 + map['height'];
         break;
       case 'didFirstFrameRendered':
         break;
@@ -104,14 +115,16 @@ class RTCVideoRenderer {
   }
 
   void errorListener(Object obj) {
-    final PlatformException e = obj;
+    final PlatformException e=obj;
     throw e;
   }
 }
 
 class RTCVideoView extends StatefulWidget {
   final RTCVideoRenderer _renderer;
+
   RTCVideoView(this._renderer);
+
   @override
   _RTCVideoViewState createState() => new _RTCVideoViewState(_renderer);
 }
@@ -121,29 +134,30 @@ class _RTCVideoViewState extends State<RTCVideoView> {
   double _aspectRatio;
   RTCVideoViewObjectFit _objectFit;
   bool _mirror;
+
   _RTCVideoViewState(this._renderer);
 
   @override
   void initState() {
     super.initState();
     _setCallbacks();
-    _aspectRatio = _renderer.aspectRatio;
-    _mirror = _renderer.mirror;
-    _objectFit = _renderer.objectFit;
+    _aspectRatio=_renderer.aspectRatio;
+    _mirror=_renderer.mirror;
+    _objectFit=_renderer.objectFit;
   }
 
   @override
   void deactivate() {
     super.deactivate();
-    _renderer.onStateChanged = null;
+    _renderer.onStateChanged=null;
   }
 
   void _setCallbacks() {
-    _renderer.onStateChanged = () {
+    _renderer.onStateChanged=() {
       setState(() {
-        _aspectRatio = _renderer.aspectRatio;
-        _mirror = _renderer.mirror;
-        _objectFit = _renderer.objectFit;
+        _aspectRatio=_renderer.aspectRatio;
+        _mirror=_renderer.mirror;
+        _objectFit=_renderer.objectFit;
       });
     };
   }
@@ -154,9 +168,9 @@ class _RTCVideoViewState extends State<RTCVideoView> {
         height: constraints.maxHeight,
         child: FittedBox(
             fit:
-                _objectFit == RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
-                    ? BoxFit.contain
-                    : BoxFit.cover,
+            _objectFit == RTCVideoViewObjectFit.RTCVideoViewObjectFitContain
+                ? BoxFit.contain
+                : BoxFit.cover,
             child: new Center(
                 child: new SizedBox(
                     width: constraints.maxHeight * _aspectRatio,
@@ -166,18 +180,20 @@ class _RTCVideoViewState extends State<RTCVideoView> {
                           ..rotateY(_mirror ? -pi : 0.0),
                         alignment: FractionalOffset.center,
                         child:
-                            new Texture(textureId: _renderer._textureId))))));
+                        new Texture(textureId: _renderer._textureId))))));
   }
 
   @override
   Widget build(BuildContext context) {
-    bool renderVideo =
-        (_renderer._textureId != null && _renderer._srcObject != null);
+    bool renderVideo=
+    (_renderer._textureId != null && _renderer._srcObject != null);
 
     return new LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-      return new Center(
-          child: renderVideo ? _buildVideoView(constraints) : new Container());
-    });
+          return new Center(
+              child: renderVideo
+                  ? _buildVideoView(constraints)
+                  : new Container());
+        });
   }
 }
