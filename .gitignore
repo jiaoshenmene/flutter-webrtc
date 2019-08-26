@@ -13,3 +13,8 @@ example/android/gradle*
 WorkspaceSettings.xcsettings
 example/.flutter-plugins
 example/android/local.properties
+.gradle
+android/local.properties
+gradle/
+gradlew
+gradlew.bat
