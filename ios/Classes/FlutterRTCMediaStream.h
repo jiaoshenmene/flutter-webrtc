@@ -11,6 +11,9 @@
 
 -(void)getSources:(FlutterResult)result;
 
+- (void)mediaStreamTrackSwitchAudio:(RTCMediaStreamTrack *)track
+                             result:(FlutterResult) result;
+
 -(void)mediaStreamTrackSwitchCamera:(RTCMediaStreamTrack *)track
                              result:(FlutterResult) result;
 

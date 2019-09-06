@@ -60,6 +60,8 @@
     self.localStreams = [NSMutableDictionary new];
     self.localTracks = [NSMutableDictionary new];
     self.renders = [[NSMutableDictionary alloc] init];
+    
+     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didSessionRouteChange:) name:AVAudioSessionRouteChangeNotification object:nil];
     return self;
 }
 
@@ -368,7 +370,21 @@
                 result([FlutterError errorWithCode:[@"Track is class of " stringByAppendingString:[[track class] description]] message:nil details:nil]);
             }
         }
-    }else if ([@"setVolume" isEqualToString:call.method]){
+    }else if ([@"mediaStreamTrackSwitchAudioPort" isEqualToString:call.method]) {
+        NSDictionary* argsMap = call.arguments;
+        NSString* trackId = argsMap[@"trackId"];
+        RTCMediaStreamTrack *track = self.localTracks[trackId];
+        if (track != nil ) {
+            [self mediaStreamTrackSwitchAudio:track result:result];
+        } else {
+            if (track == nil) {
+                result([FlutterError errorWithCode:@"Track is nil" message:nil details:nil]);
+            } else {
+                result([FlutterError errorWithCode:[@"Track is class of " stringByAppendingString:[[track class] description]] message:nil details:nil]);
+            }
+        }
+    }
+    else if ([@"setVolume" isEqualToString:call.method]){
         NSDictionary* argsMap = call.arguments;
         NSString* trackId = argsMap[@"trackId"];
         NSNumber* volume = argsMap[@"volume"];

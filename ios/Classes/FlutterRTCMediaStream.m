@@ -65,9 +65,34 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
      successCallback:(NavigatorUserMediaSuccessCallback)successCallback
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
+    id audioMode = [constraints objectForKey:@"audioMode"];
+    if (audioMode && [audioMode isKindOfClass:[NSString class]]) {
+        if ([audioMode isEqualToString:@"nono"]) {
+            self._usingSpeaker = NO;
+        } else if ([audioMode isEqualToString:@"speaker"]) {
+            self._usingSpeaker = YES;
+        } else {
+            self._usingSpeaker = NO;
+        }
+    }
     NSString *trackId = [[NSUUID UUID] UUIDString];
-    RTCAudioTrack *audioTrack
-    = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
+    
+    NSMutableDictionary *mandatoryConstraints = [NSMutableDictionary dictionary];
+    NSMutableDictionary *optionalConstraints = [NSMutableDictionary dictionary];
+    id mandatory = [constraints objectForKey:@"mandatory"];
+    if (mandatory && [mandatory isKindOfClass:[NSDictionary class]]) {
+        [mandatoryConstraints addEntriesFromDictionary:mandatory];
+    }
+    id optional = [constraints objectForKey:@"optional"];
+    if (optional && [optional isKindOfClass:[NSDictionary class]]) {
+        [optionalConstraints addEntriesFromDictionary:optional];
+    }
+
+    RTCMediaConstraints *constrains = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatoryConstraints optionalConstraints:optionalConstraints];
+    RTCAudioSource *audioSource = [self.peerConnectionFactory audioSourceWithConstraints:constrains];
+    RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithSource:audioSource trackId:trackId];
+    //    RTCAudioTrack *audioTrack
+    //    = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
     
     [mediaStream addAudioTrack:audioTrack];
     
@@ -493,6 +518,13 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
     }];
 }
 
+- (void)mediaStreamTrackSwitchAudio:(RTCMediaStreamTrack *)track
+                             result:(FlutterResult)result {
+    self._usingSpeaker = !self._usingSpeaker;
+    [self _switchAudioPort];
+    result([NSNumber numberWithBool:self._usingSpeaker]);
+}
+
 -(void)mediaStreamTrackCaptureFrame:(RTCVideoTrack *)track toPath:(NSString *) path result:(FlutterResult)result
 {
     if (!self.videoCapturer) {
@@ -549,6 +581,34 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
         maxSupportedFramerate = fmax(maxSupportedFramerate, fpsRange.maxFrameRate);
     }
     return fmin(maxSupportedFramerate, self._targetFps);
+}
+
+- (void)didSessionRouteChange:(NSNotification *)notification
+{
+    NSDictionary *interuptionDict = notification.userInfo;
+    NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
+    
+    switch (routeChangeReason) {
+        case AVAudioSessionRouteChangeReasonCategoryChange: {
+            // Set speaker as default route
+            [self _switchAudioPort];
+
+        }
+            break;
+            
+        default:
+            break;
+    }
+}
+
+- (void)_switchAudioPort {
+    if (self._usingSpeaker) {
+        NSError* error;
+        [[AVAudioSession sharedInstance] overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:&error];
+    } else {
+        NSError* error;
+        [[AVAudioSession sharedInstance] overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:&error];
+    }
 }
 
 @end

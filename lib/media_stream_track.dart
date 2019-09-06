@@ -19,17 +19,23 @@ class MediaStreamTrack {
   }
 
   bool get enabled => _enabled;
+
   String get label => _label;
+
   String get kind => _kind;
+
   String get id => _trackId;
 
   ///Future contains isFrontCamera
   ///Throws error if switching camera failed
-  Future<bool> switchCamera() =>
-    _channel.invokeMethod(
-      'mediaStreamTrackSwitchCamera',
-      <String, dynamic>{'trackId': _trackId},
-    );
+  Future<bool> switchCamera() => _channel.invokeMethod(
+        'mediaStreamTrackSwitchCamera',
+        <String, dynamic>{'trackId': _trackId},
+      );
+
+  Future<bool> switchAudioPort() => _channel.invokeMethod(
+      'mediaStreamTrackSwitchAudioPort',
+      <String, dynamic>{'trackId': _trackId});
 
   void setVolume(double volume) async {
     await _channel.invokeMethod(
@@ -38,11 +44,10 @@ class MediaStreamTrack {
     );
   }
 
-  captureFrame(String filePath) =>
-    _channel.invokeMethod(
-      'captureFrame',
-      <String, dynamic>{'trackId':_trackId, 'path': filePath},
-    );
+  captureFrame(String filePath) => _channel.invokeMethod(
+        'captureFrame',
+        <String, dynamic>{'trackId': _trackId, 'path': filePath},
+      );
 
   Future<void> dispose() async {
     await _channel.invokeMethod(

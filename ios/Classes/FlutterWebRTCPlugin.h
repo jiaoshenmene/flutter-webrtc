@@ -20,6 +20,7 @@
 @property (nonatomic, retain) UIViewController *viewController;/*for broadcast or ReplayKit */
 @property (nonatomic, strong) NSObject<FlutterBinaryMessenger>* messenger;
 @property (nonatomic, strong) RTCCameraVideoCapturer *videoCapturer;
+@property (nonatomic) BOOL _usingSpeaker;
 @property (nonatomic) BOOL _usingFrontCamera;
 @property (nonatomic) int _targetWidth;
 @property (nonatomic) int _targetHeight;
